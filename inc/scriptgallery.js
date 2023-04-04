@@ -40,7 +40,6 @@ const ajax_fetch = (cat, paged, more) => {
 jQuery(document).ready(function ($) {
   ajax_fetch()
     .then((response) => {
-      console.log(response);
       wp_grid_masonry(response.items);
       document.querySelector(".allitems").click();
     })
