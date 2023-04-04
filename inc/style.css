@@ -27,7 +27,12 @@
   gap: 5px;
   flex-wrap: wrap;
 }
-
+.loadmore {
+  width: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
 /* CSS */
 .filter-tab {
   background-color: #ffffff;

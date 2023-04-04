@@ -29,11 +29,13 @@ function postgallery_enqueue_scripts() {
 
 // custom end point //
 function myplugin_get_posts( $request ) {
-  $limit = $request->get_param( 'limit' );
   $category_id = $request->get_param( 'cat' );
+  $current_page = $request->get_param( 'page' );
   $args = array(
       'post_type' => 'post',
-      'posts_per_page' => $limit ? absint( $limit ) : 10,
+      // 'posts_per_page' => $limit ? absint( $limit ) : 2,
+      'posts_per_page' => 5,
+      'paged' => $current_page,
       'cat' => $category_id ? absint( $category_id ) : "",
   );
   $query = new WP_Query( $args );
@@ -55,24 +57,35 @@ function myplugin_get_posts( $request ) {
           'img_src' => get_the_post_thumbnail_url( $post->ID),
            "img_cat" => $categories[0],
            "post_url" => get_permalink( $post->ID ),
+            // "max" => $query->max_num_pages,
           // add any other fields you want to include in the response
       );
+      $object = (object) [
+        'items' => $data,
+        'max_pages' => $query->max_num_pages,
+      ];
   }
-  return rest_ensure_response( $data );
+  return rest_ensure_response( $object );
 }
 add_action( 'rest_api_init', function () {
   register_rest_route( 'wppostgallery/v2', '/posts', array(
       'methods' => 'GET',
       'callback' => 'myplugin_get_posts',
+      'args' => array(
+          'page' => array(
+                'default' => 1,
+            'sanitize_callback' => 'absint',
+          ),
+      ),
   ) );
 } );
 
 function wp_gallery_rest_api_call(){
   if (rest_url( 'wppostgallery/v2/posts' )){
     $endpoint_url = rest_url( 'wppostgallery/v2/posts' );
-    $endpoint_url = $endpoint_url.'?limit='.$_POST["my_data_limit"].'&cat='.$_POST["my_data_cat"].'';
+    $endpoint_url = $endpoint_url.'?page='.$_POST["my_data_page"].'&cat='.$_POST["my_data_cat"].'';
   }
-  $response = wp_remote_get(  $endpoint_url );
+  $response = wp_remote_get(   $endpoint_url );
 
 if ( is_wp_error( $response ) ) {
     // handle error
@@ -80,11 +93,11 @@ if ( is_wp_error( $response ) ) {
 
 $data = json_decode( wp_remote_retrieve_body( $response ), true );
 if ( empty( $data ) ) {
-    // handle empty response
+
+
 }
 
-wp_send_json($data);
-
+wp_send_json(  $data );
 }
 add_action('wp_ajax_wp_gallery_action', 'wp_gallery_rest_api_call');
 add_action('wp_ajax_nopriv_wp_gallery_action', 'wp_gallery_rest_api_call');
